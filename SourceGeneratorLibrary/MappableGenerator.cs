@@ -1,0 +1,79 @@
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
+using System.Diagnostics;
+using System.Text;
+
+namespace SourceGeneratorLibrary;
+
+[Generator]
+public class MappableGenerator : ISourceGenerator
+{
+    public void Execute(GeneratorExecutionContext context)
+    {
+        var syntaxTrees = context.Compilation.SyntaxTrees;
+
+        foreach (var syntaxtTree in syntaxTrees)
+        {
+            var mappableTypeDeclarations = syntaxtTree.GetRoot()
+                .DescendantNodes()
+                .OfType<TypeDeclarationSyntax>()
+                .Where(x => x.AttributeLists.Any(a => a.ToString().StartsWith("[Mappable")))
+                .ToList();
+
+            foreach (var mappableTypeDeclaration in mappableTypeDeclarations)
+            {
+                var usingDirectives = syntaxtTree.GetRoot()
+                    .DescendantNodes()
+                    .OfType<UsingDirectiveSyntax>();
+                var usingDirectivesAsText = string.Join("\r\n", usingDirectives);
+                var sourceBuilder = new StringBuilder(usingDirectivesAsText);
+
+                var className = mappableTypeDeclaration.Identifier.ToString();
+
+                var mappableAttributeArgumentList = mappableTypeDeclaration.AttributeLists
+                    .Single(a => a.ToString().StartsWith("[Mappable"))
+                    .Attributes.Single().ArgumentList;
+
+                var suffix = mappableAttributeArgumentList!.Arguments.Single().ToString().Trim(['"']);
+                var generatedSuffix = string.IsNullOrWhiteSpace(suffix) ? "Response" : suffix;
+                var generatedClassName = $"{className}{generatedSuffix}";
+
+                var ignoredProperties = mappableTypeDeclaration.ChildNodes()
+                    .Where(n => n is PropertyDeclarationSyntax pds &&
+                        pds.AttributeLists.Any(a => a.ToString().StartsWith("[MappableIgnore]")));
+
+                var newMappableTypeDeclaration = mappableTypeDeclaration.RemoveNodes(ignoredProperties, SyntaxRemoveOptions.KeepEndOfLine);
+
+                var splitClass = newMappableTypeDeclaration.ToString().Split(['{'], 2);
+
+                sourceBuilder.Append($@"
+namespace GeneratedMappers
+{{
+    public class {generatedClassName}
+{{
+");
+                sourceBuilder.AppendLine(
+                    splitClass[1].Replace(className, generatedClassName));
+
+                sourceBuilder.AppendLine("}");
+
+                context.AddSource(
+                    $"MapperGenerator_{generatedClassName}",
+                    SourceText.From(
+                        sourceBuilder.ToString(),
+                        Encoding.UTF8));
+            }
+        }
+    }
+
+    public void Initialize(GeneratorInitializationContext context)
+    {
+#if DEBUG
+        if (!Debugger.IsAttached)
+        {
+            Debugger.Launch();
+        }
+#endif
+    }
+}
