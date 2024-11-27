@@ -1,11 +1,3 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
-using System.Diagnostics;
-using System.Text;
-
-namespace SourceGeneratorLibrary;
-
 [Generator]
 public class MappableGenerator : ISourceGenerator
 {

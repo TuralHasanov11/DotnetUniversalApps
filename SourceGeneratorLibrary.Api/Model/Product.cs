@@ -1,6 +1,4 @@
-﻿using SourceGeneratorLibrary.Api.Attributes;
-
-namespace SourceGeneratorLibrary.Api.Model;
+﻿namespace SourceGeneratorLibrary.Api.Model;
 
 public class Product
 {
@@ -8,6 +6,6 @@ public class Product
 
     public string Name { get; set; }
 
-    [MappableIgnore]
+    //[MappableIgnore]
     public decimal Price { get; set; }
 }

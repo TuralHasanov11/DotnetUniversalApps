@@ -11,11 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Providers\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\SourceGeneratorLibrary\SourceGeneratorLibrary.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\SourceGeneratorLibrary\SourceGeneratorLibrary.csproj" OutputItemType="Analyzer" />
   </ItemGroup>
 
 </Project>
